@@ -1,7 +1,8 @@
 import cv2
 import numpy as np
 
-img_color = cv2.imread('20200916_181404_cr_0000001520.png')
+img_color = cv2.imread('20200916_181404_cr_0000001480.png')
+# img_color = cv2.imread('stopline_no/20200916_181404_cr_0000000900.png')
 # # img_color = img_color[400:480, 120:520]  # y, x
 # img_gray = cv2.cvtColor(img_color, cv2.COLOR_BGR2GRAY)
 # ret, img_binary = cv2.threshold(img_gray, 127, 255, 0)
@@ -54,8 +55,8 @@ def detect_stoplineB(x):
     # ]], dtype=np.int32)
     vertices = np.array([[
         (350, frame.shape[0]*0.73), #*0.63
-        (400, frame.shape[0]*0.5), #*0.58
-        (frame.shape[1] - 300, frame.shape[0]*0.5), #*0.58
+        (400, frame.shape[0]*0.59), #*0.58
+        (frame.shape[1] - 300, frame.shape[0]*0.59), #*0.58
         (frame.shape[1] - 250, frame.shape[0]*0.73)  #*0.63
     ]], dtype=np.int32)
 
@@ -91,7 +92,8 @@ def detect_stoplineB(x):
             # print('result:', frame)
             # cv2.imshow('result', result)
             x, y, w, h = cv2.boundingRect(contour)
-            if stopline_info[2] < w:
+            print('x, y, w, h:', x, y, w, h)
+            if stopline_info[2] < w and h < 40:
                 stopline_info = [x, y, w, h]
                 approx_max = approx
         # cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 0, 255), 3)

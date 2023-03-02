@@ -1,25 +1,7 @@
 import cv2
 import numpy as np
 
-img_color = cv2.imread('20200916_181404_cr_0000001530.png')
-# img_color = cv2.imread('stopline_no/20200916_181404_cr_0000000900.png')
-# # img_color = img_color[400:480, 120:520]  # y, x
-# img_gray = cv2.cvtColor(img_color, cv2.COLOR_BGR2GRAY)
-# ret, img_binary = cv2.threshold(img_gray, 127, 255, 0)
-# contours, hierarchy = cv2.findContours(img_binary, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
-
-# for cnt in contours[:]:
-#     # print("result2", cnt)
-#     # if 7500 < cv2.contourArea(cnt) < 7700:
-#     if 75 < cv2.contourArea(cnt):
-#         # print(cnt)
-#         cv2.drawContours(img_color, [cnt], 0, (255, 0, 0), 3)  # blue
-#         print(cv2.contourArea(cnt))
-# print(img_gray[40,200])
-
-# cv2.imshow("result", img_color)
-# print("result2", cv2.contourArea(cnt))
-# cv2.waitKey(0)
+img_color = cv2.imread('20200904_175240_cr_0000001415.png')
 
 def region_of_interest(img, vertices, color3=(255, 255, 255), color1=255):
     mask = np.zeros_like(img)
@@ -34,8 +16,8 @@ def region_of_interest(img, vertices, color3=(255, 255, 255), color1=255):
 def detect_stoplineB(x):
     frame = x.copy()
     img = frame.copy()
-    min_stopline_length = 200 #330 #defualt 250
-    #max_stopline_length = 250
+    min_dashline_length = 0 #330 #defualt 250
+    #max_dashline_length = 250
     max_distance = 500 #120 #defualt 70
     min_distance = 80
 
@@ -54,10 +36,10 @@ def detect_stoplineB(x):
     #     (frame.shape[1] - 120, frame.shape[0])
     # ]], dtype=np.int32)
     vertices = np.array([[
-        (350, frame.shape[0]*0.73), #*0.63
-        (400, frame.shape[0]*0.59), #*0.58
-        (frame.shape[1] - 300, frame.shape[0]*0.59), #*0.58
-        (frame.shape[1] - 250, frame.shape[0]*0.73)  #*0.63
+        (590, frame.shape[0]*0.73), #*0.63
+        (620, frame.shape[0]*0.51), #*0.58
+        (frame.shape[1] - 350, frame.shape[0]*0.51), #*0.58
+        (frame.shape[1] - 500, frame.shape[0]*0.73)  #*0.63
     ]], dtype=np.int32)
 
     roi = region_of_interest(blur_frame, vertices)
@@ -69,7 +51,7 @@ def detect_stoplineB(x):
     # cv2.imshow('bin', img_result)
 
     # binary
-    ret, dest = cv2.threshold(img_result, 160, 255, cv2.THRESH_BINARY)
+    ret, dest = cv2.threshold(img_result, 140, 255, cv2.THRESH_BINARY) ## default 160, 255
     # cv2.imshow('dest', dest)
     # canny
     low_threshold, high_threshold = 70, 210
@@ -82,6 +64,7 @@ def detect_stoplineB(x):
     #_, contours, hierarchy = cv2.findContours(edge_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     
     approx_max:any = None
+    approxes = []
 
     if contours:
         stopline_info = [0, 0, 0, 0]
@@ -93,29 +76,34 @@ def detect_stoplineB(x):
             # cv2.imshow('result', result)
             x, y, w, h = cv2.boundingRect(contour)
             print('x, y, w, h:', x, y, w, h)
-            if stopline_info[2] < w and h < 40:
+            if 0 < h < 48:
                 stopline_info = [x, y, w, h]
                 approx_max = approx
-        # cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 0, 255), 3)
-        rect = cv2.minAreaRect(approx_max)
-        box = cv2.boxPoints(rect)
-        box = np.int0(box)
-        result = cv2.drawContours(frame, [box], 0, (0, 255, 0), 3)
+                print('max:', x, y, w, h)
+                approxes.append(approx)
+            # cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 0, 255), 3)
+                # rect = cv2.minAreaRect(approx_max)
+                # box = cv2.boxPoints(rect)
+                # box = np.int0(box)
+        rects = [cv2.minAreaRect(appr) for appr in approxes]
+        boxes = [np.int0(cv2.boxPoints(rect)) for rect in rects]
+        print('boxes:', len(boxes))
+        result = cv2.drawContours(frame, boxes, -1, (0, 255, 0), 3)
         # cv2.imshow('result', result)
         # print('x, y, w, h:', x, y, w, h)
         
         cx, cy = stopline_info[0] + 0.5 * stopline_info[2], stopline_info[1] + 0.5 * stopline_info[3]
         center = np.array([cx, cy])
-        stopline_length = stopline_info[2]
+        dashline_length = stopline_info[3]
         bot_point = np.array([frame.shape[1] // 2, frame.shape[0]])
         distance = np.sqrt(np.sum(np.square(center - bot_point)))
 
         # OUTPUT
-        print('length : {},  distance : {}'.format(stopline_length, distance))
+        print('length : {},  distance : {}'.format(dashline_length, distance))
         # red_color = (0,0,255)
         # cv2.rectangle(img, vertices, red_color, 3)
-        if stopline_length > min_stopline_length and min_distance <distance < max_distance:
-        #if min_stopline_length <= stopline_length <= max_stopline_length and min_distance < distance < max_distance:
+        if dashline_length > min_dashline_length and min_distance < distance < max_distance:
+        #if min_dashline_length <= dashline_length <= max_dashline_length and min_distance < distance < max_distance:
             cv2.imshow('stopline', result)
             cv2.waitKey(1)
             print('STOPLINE Detected')

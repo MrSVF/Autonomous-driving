@@ -1,7 +1,28 @@
 import cv2
 import numpy as np
 
-img_color = cv2.imread('20200904_175240_cr_0000001415.png')
+# img_color = cv2.imread('20200904_174236_cr_0000001060.png')
+# img_color = cv2.imread('20200904_174236_cr_0000001180.png')
+# img_color = cv2.imread('20200904_174236_cr_0000001150.png')
+# img_color = cv2.imread('20200904_174236_cr_0000001170.png')
+# img_color = cv2.imread('20200904_174236_cr_0000001205.png')
+# img_color = cv2.imread('20200904_174236_cr_0000001210.png')
+# img_color = cv2.imread('20200904_174236_cr_0000001230.png')
+# img_color = cv2.imread('20200904_174236_cr_0000001246.png')
+# img_color = cv2.imread('20200904_174236_cr_0000001300.png')
+# img_color = cv2.imread('20200904_174236_cr_0000001314.png')
+# img_color = cv2.imread('20200904_174236_cr_0000001315.png')
+# img_color = cv2.imread('20200904_174236_cr_0000001327.png')
+# img_color = cv2.imread('20200904_174236_cr_0000001340.png')
+img_color = cv2.imread('20200904_174236_cr_0000001350.png')
+# img_color = cv2.imread('20200904_174236_cr_0000001360.png')
+# img_color = cv2.imread('20200904_174236_cr_0000001370.png')
+# img_color = cv2.imread('20200904_174236_cr_0000001380.png')
+# img_color = cv2.imread('20200904_174236_cr_0000001390.png')
+# img_color = cv2.imread('20200904_175240_cr_0000001415.png')
+# img_color = cv2.imread('20200904_175240_cr_0000001460.png')
+# img_color = cv2.imread('20200904_175240_cr_0000001465.png')
+# img_color = cv2.imread('20200904_175240_cr_0000001470.png')
 
 def region_of_interest(img, vertices, color3=(255, 255, 255), color1=255):
     mask = np.zeros_like(img)
@@ -18,7 +39,7 @@ def detect_stoplineB(x):
     img = frame.copy()
     min_dashline_length = 0 #330 #defualt 250
     #max_dashline_length = 250
-    max_distance = 500 #120 #defualt 70
+    max_distance = 1000 #120 #defualt 70
     min_distance = 80
 
     # gray
@@ -26,7 +47,8 @@ def detect_stoplineB(x):
     
     # blur
     kernel_size = 5
-    blur_frame = cv2.GaussianBlur(gray, (kernel_size, kernel_size), 0)
+    blur_frame = gray#cv2.GaussianBlur(gray, (kernel_size, kernel_size), 0)
+    # cv2.imshow("blur_frame:", blur_frame)
     
     # roi
     # vertices = np.array([[
@@ -35,30 +57,37 @@ def detect_stoplineB(x):
     #     (frame.shape[1] - 80, frame.shape[0] - 120),
     #     (frame.shape[1] - 120, frame.shape[0])
     # ]], dtype=np.int32)
+    # vertices = np.array([[
+    #     (524, frame.shape[0]*0.73), #*0.63
+    #     (513, frame.shape[0]*0.51), #*0.58
+    #     (553, frame.shape[0]*0.51), #*0.58
+    #     (624, frame.shape[0]*0.73)  #*0.63
+    # ]], dtype=np.int32)
     vertices = np.array([[
-        (590, frame.shape[0]*0.73), #*0.63
-        (620, frame.shape[0]*0.51), #*0.58
-        (frame.shape[1] - 350, frame.shape[0]*0.51), #*0.58
-        (frame.shape[1] - 500, frame.shape[0]*0.73)  #*0.63
+        (499, frame.shape[0]*0.73), #*0.63
+        (583, frame.shape[0]*0.51), #*0.58
+        (623, frame.shape[0]*0.51), #*0.58
+        (599, frame.shape[0]*0.73)  #*0.63
     ]], dtype=np.int32)
 
     roi = region_of_interest(blur_frame, vertices)
     cv2.imshow("roi:", roi)
     # filter
-    img_mask = cv2.inRange(roi, 100, 400) ## default 160, 220
+    img_mask = cv2.inRange(roi, 160, 255) ## default 160, 220
     img_result = cv2.bitwise_and(roi, roi, mask=img_mask)
 
-    # cv2.imshow('bin', img_result)
+    cv2.imshow('bin', img_result)
 
     # binary
-    ret, dest = cv2.threshold(img_result, 140, 255, cv2.THRESH_BINARY) ## default 160, 255
+    ret, dest = cv2.threshold(img_result, 150, 255, cv2.THRESH_BINARY) ## default 160, 255
     # cv2.imshow('dest', dest)
     # canny
-    low_threshold, high_threshold = 70, 210
+    low_threshold, high_threshold = 70, 210 #70, 210
     edge_img = cv2.Canny(np.uint8(dest), low_threshold, high_threshold)
     cv2.imshow('edge_img', edge_img)
     # find contours, opencv4
     contours, hierarchy = cv2.findContours(edge_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    print('frame:', frame[0][0])
     # print('contours:', len(contours))
     # find contours, opencv3
     #_, contours, hierarchy = cv2.findContours(edge_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -74,12 +103,12 @@ def detect_stoplineB(x):
             # result = cv2.drawContours(frame, [approx], 0, (0,255,0), 4)
             # print('result:', frame)
             # cv2.imshow('result', result)
-            x, y, w, h = cv2.boundingRect(contour)
-            print('x, y, w, h:', x, y, w, h)
-            if 0 < h < 48:
+            (x, y), (w, h), theta = cv2.minAreaRect(contour)
+            # print('x, y, w, h:', x, y, w, h, theta)
+            if w > 30 or h > 30:
                 stopline_info = [x, y, w, h]
                 approx_max = approx
-                print('max:', x, y, w, h)
+                print('max:', x, y, w, h, theta)
                 approxes.append(approx)
             # cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 0, 255), 3)
                 # rect = cv2.minAreaRect(approx_max)
@@ -115,6 +144,6 @@ def detect_stoplineB(x):
     # print('No STOPLINE.')
     return False
 
-
+print('TYPE:', img_color.shape)
 detect_stoplineB(img_color)
 cv2.waitKey(0)

@@ -94,8 +94,10 @@ def detect_stoplineB(x):
     
     approx_max:any = None
     approxes = []
+    dashes = []
 
     if contours:
+        print('contours:', len(contours))
         stopline_info = [0, 0, 0, 0]
         for contour in contours:
             epsilon = 0.01 * cv2.arcLength(contour, True)
@@ -105,17 +107,55 @@ def detect_stoplineB(x):
             # cv2.imshow('result', result)
             (x, y), (w, h), theta = cv2.minAreaRect(contour)
             # print('x, y, w, h:', x, y, w, h, theta)
-            if w > 30 or h > 30:
+            if w > 110 or h > 110:
                 stopline_info = [x, y, w, h]
                 approx_max = approx
                 print('max:', x, y, w, h, theta)
                 approxes.append(approx)
-            # cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 0, 255), 3)
-                # rect = cv2.minAreaRect(approx_max)
-                # box = cv2.boxPoints(rect)
-                # box = np.int0(box)
+            elif max(w, h) > 30 and min(w, h) > 7:
+                dashes.append([x, y, w, h])
+                approxes.append(approx)
+            
+        dashes_sorted = sorted(dashes, key=lambda x: x[1], reverse=True)
+        
+        # def is_valid(element):
+        #     dash_len_i = max(dashes_sorted[i][2], dashes_sorted[i][3])
+        #     dashes_sorted[i][1]-dash_len_i/2 < dashes_sorted[i+1]
+        #     return element != [0, 0]
+        
+        # dashes_sorted_ok = list(filter(lambda x: x != [0, 0], dashes_sorted))
+        dashes_sorted_ok = [dashes_sorted[0]] if len(dashes_sorted) !=0 else []
+        for i in range(len(dashes_sorted)-1):
+            # center_distance = np.sqrt((dashes_sorted[i][0]-dashes_sorted[i+1][0])**2 + \
+            #                           (dashes_sorted[i][1]-dashes_sorted[i+1][1])**2)
+            dash_len_i = max(dashes_sorted[i][2], dashes_sorted[i][3])
+            if dashes_sorted[i][1]-dash_len_i/2 > dashes_sorted[i+1][1]:
+                dashes_sorted_ok.append(dashes_sorted[i+1])
+            else:
+                del approxes[i+1]
+            print('----------dashes_sorted_ok:', i, dashes_sorted_ok)
+
+        if len(dashes_sorted_ok) == 2:
+            center_distance = np.sqrt((dashes_sorted_ok[1][0]-dashes_sorted_ok[0][0])**2 + \
+                                      (dashes_sorted_ok[1][1]-dashes_sorted_ok[0][1])**2)
+            print('center_distance:', center_distance)
+            dash_len1 = max(dashes_sorted_ok[0][2], dashes_sorted_ok[0][3])
+            dash_len2 = max(dashes_sorted_ok[1][2], dashes_sorted_ok[1][3])
+            print('dash_len1/2:', dash_len1/2)
+            print('dash_len2/2:', dash_len2/2)
+            print('dist:', center_distance - dash_len2/2 - dash_len1/2)
+
+            # if center_distance - dash_len2/2 - dash_len1/2 < 23:
+            #     return True
+        # cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 0, 255), 3)
+            # rect = cv2.minAreaRect(approx_max)
+            # box = cv2.boxPoints(rect)
+            # box = np.int0(box)
         rects = [cv2.minAreaRect(appr) for appr in approxes]
         boxes = [np.int0(cv2.boxPoints(rect)) for rect in rects]
+        print('len(dashes):', len(dashes))
+        # print('len(dashes_sorted_ok):', len(dashes_sorted_ok))
+        # print('dashes_sorted_ok:', dashes_sorted_ok)
         print('boxes:', len(boxes))
         result = cv2.drawContours(frame, boxes, -1, (0, 255, 0), 3)
         # cv2.imshow('result', result)
@@ -131,7 +171,7 @@ def detect_stoplineB(x):
         print('length : {},  distance : {}'.format(dashline_length, distance))
         # red_color = (0,0,255)
         # cv2.rectangle(img, vertices, red_color, 3)
-        if dashline_length > min_dashline_length and min_distance < distance < max_distance:
+        if dashline_length >= min_dashline_length and min_distance < distance < max_distance:
         #if min_dashline_length <= dashline_length <= max_dashline_length and min_distance < distance < max_distance:
             cv2.imshow('stopline', result)
             cv2.waitKey(1)

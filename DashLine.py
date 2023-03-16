@@ -14,7 +14,10 @@ import numpy as np
 # img_color = cv2.imread('20200904_174236_cr_0000001315.png')
 # img_color = cv2.imread('20200904_174236_cr_0000001327.png')
 # img_color = cv2.imread('20200904_174236_cr_0000001340.png')
-img_color = cv2.imread('20200904_174236_cr_0000001350.png')
+# img_color = cv2.imread('20200904_174236_cr_0000001348.png')
+# img_color = cv2.imread('20200904_174236_cr_0000001349.png')
+# img_color = cv2.imread('20200904_174236_cr_0000001349.jpg')
+# img_color = cv2.imread('20200904_174236_cr_0000001350.png')
 # img_color = cv2.imread('20200904_174236_cr_0000001360.png')
 # img_color = cv2.imread('20200904_174236_cr_0000001370.png')
 # img_color = cv2.imread('20200904_174236_cr_0000001380.png')
@@ -23,6 +26,7 @@ img_color = cv2.imread('20200904_174236_cr_0000001350.png')
 # img_color = cv2.imread('20200904_175240_cr_0000001460.png')
 # img_color = cv2.imread('20200904_175240_cr_0000001465.png')
 # img_color = cv2.imread('20200904_175240_cr_0000001470.png')
+img_color = cv2.imread('20200904_174236_cr_0000001518.jpg')
 
 def region_of_interest(img, vertices, color3=(255, 255, 255), color1=255):
     mask = np.zeros_like(img)
@@ -48,6 +52,7 @@ def detect_stoplineB(x):
     # blur
     kernel_size = 5
     blur_frame = gray#cv2.GaussianBlur(gray, (kernel_size, kernel_size), 0)
+    print('blur_frame SUM:', blur_frame.sum(), blur_frame.shape, blur_frame[0][0], type(blur_frame[0][0]))
     # cv2.imshow("blur_frame:", blur_frame)
     
     # roi
@@ -63,17 +68,31 @@ def detect_stoplineB(x):
     #     (553, frame.shape[0]*0.51), #*0.58
     #     (624, frame.shape[0]*0.73)  #*0.63
     # ]], dtype=np.int32)
+    # vertices = np.array([[
+    #     (499, frame.shape[0]*0.7), #*0.63   1350
+    #     (583, frame.shape[0]*0.51), #*0.58
+    #     (623, frame.shape[0]*0.51), #*0.58
+    #     (599, frame.shape[0]*0.7)  #*0.63
+    # ]], dtype=np.int32)
+    # vertices = np.array([[
+    #     (490.4, frame.shape[0]*0.7), #*0.63   1349
+    #     (576.64, frame.shape[0]*0.51), #*0.58
+    #     (616.64, frame.shape[0]*0.51), #*0.58
+    #     (590.4, frame.shape[0]*0.7)  #*0.63
+    # ]], dtype=np.int32)
     vertices = np.array([[
-        (499, frame.shape[0]*0.73), #*0.63
-        (583, frame.shape[0]*0.51), #*0.58
-        (623, frame.shape[0]*0.51), #*0.58
-        (599, frame.shape[0]*0.73)  #*0.63
+        (739, frame.shape[0]*0.7), #*0.63   1349
+        (725, frame.shape[0]*0.51), #*0.58
+        (765, frame.shape[0]*0.51), #*0.58
+        (839, frame.shape[0]*0.7)  #*0.63
     ]], dtype=np.int32)
+    print('POINTS:', frame.shape[0]*0.51, frame.shape[0]*0.7)
 
     roi = region_of_interest(blur_frame, vertices)
+    print('roi SUM:', roi.sum())
     cv2.imshow("roi:", roi)
     # filter
-    img_mask = cv2.inRange(roi, 160, 255) ## default 160, 220
+    img_mask = cv2.inRange(roi, 150, 255) ## default 160, 220
     img_result = cv2.bitwise_and(roi, roi, mask=img_mask)
 
     cv2.imshow('bin', img_result)
@@ -106,7 +125,7 @@ def detect_stoplineB(x):
             # print('result:', frame)
             # cv2.imshow('result', result)
             (x, y), (w, h), theta = cv2.minAreaRect(contour)
-            # print('x, y, w, h:', x, y, w, h, theta)
+            print('x, y, w, h:', x, y, w, h, theta)
             if w > 110 or h > 110:
                 stopline_info = [x, y, w, h]
                 approx_max = approx
@@ -133,9 +152,11 @@ def detect_stoplineB(x):
                 dashes_sorted_ok.append(dashes_sorted[i+1])
             else:
                 del approxes[i+1]
-            print('----------dashes_sorted_ok:', i, dashes_sorted_ok)
+            # print('-------dashes_sorted_ok:', i, dashes_sorted_ok)
 
         if len(dashes_sorted_ok) == 2:
+            print('dashes_sorted:', dashes_sorted)
+            print('dashes_sorted_ok:', dashes_sorted_ok)
             center_distance = np.sqrt((dashes_sorted_ok[1][0]-dashes_sorted_ok[0][0])**2 + \
                                       (dashes_sorted_ok[1][1]-dashes_sorted_ok[0][1])**2)
             print('center_distance:', center_distance)
